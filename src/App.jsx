@@ -1,4 +1,4 @@
-// src/App.js
+// src/App.jsx
 import { useEffect, useState } from "react";
 import "./styles.css";
 
