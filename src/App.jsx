@@ -76,27 +76,28 @@ export default function App() {
   };
 
   const submitFreeText = async () => {
-    if (!text.trim()) return;
-    setError("");
-    try {
-      setMessages((m) => [...m, { sender: "user", text }]);
-      const res = await api("/interview/answer", { method: "POST", body: { text } });
-      setText("");
-      setReady(Boolean(res.complete));
-      setMessages((m) => [
-        ...m,
-        {
-          sender: "ceraai",
-          text: res.complete
-            ? "I have enough to generate your Legal Entity template."
-            : (res.missing?.length ? `Noted. Still need: ${res.missing.map(x => x.field).join(", ")}` : "Noted."),
-        },
-      ]);
-      await refreshState();
-    } catch (e) {
-      setError(String(e.message || e));
-    }
-  };
+  if (!text.trim()) return;
+  setMessages(m => [...m, { sender: "user", text }]);
+
+  const res = await api("/interview/answer", { method: "POST", body: { text } });
+  setText("");
+  setReady(Boolean(res.complete));
+  await refreshState();
+
+  if (res.complete) {
+    setMessages(m => [...m, { sender: "ceraai", text: "I have enough to generate your Legal Entity template." }]);
+    return;
+  }
+
+  // Auto-ask next question (server returns `next` with `question`)
+  if (res.next && res.next.question) {
+    setMessages(m => [...m, { sender: "ceraai", text: res.next.question }]);
+  } else {
+    // fallback: fetch a fresh next question
+    await nextQuestion();
+  }
+};
+
 
   const refreshState = async () => {
     setError("");
@@ -177,10 +178,9 @@ export default function App() {
           <section className="card chat">
             <div className="card-head">
               <h2>Interview</h2>
-              <div className="actions">
-                <button className="btn" onClick={nextQuestion}>Next</button>
-              </div>
+              <div /> {/* no actions */}
             </div>
+
             <div className="chat-body">
               {messages.map((m, i) => (
                 <div key={i} className={`bubble ${m.sender === "user" ? "user" : "bot"}`}>
