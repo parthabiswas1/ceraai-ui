@@ -76,27 +76,41 @@ export default function App() {
   };
 
   const submitFreeText = async () => {
-  if (!text.trim()) return;
-  setMessages(m => [...m, { sender: "user", text }]);
+    if (!text.trim()) return;
+    setMessages((m) => [...m, { sender: "user", text }]);
+  
+    try {
+      const res = await api("/interview/answer", { method: "POST", body: { text } });
+      setText("");
+      setReady(Boolean(res.complete));
+      await refreshState();
+  
+      // If the backend answered a side question via RAG/LLM
+      if (res.assist) {
+        setMessages((m) => [...m, { sender: "ceraai", text: res.assist }]);
+      }
+  
+      // If gating is complete
+      if (res.complete) {
+        setMessages((m) => [
+          ...m,
+          { sender: "ceraai", text: "I have enough to generate your Legal Entity template." },
+        ]);
+        return;
+      }
+  
+      // Otherwise, show the next gating question
+      if (res.next && res.next.question) {
+        setMessages((m) => [...m, { sender: "ceraai", text: res.next.question }]);
+      } else {
+        // fallback to fetching a fresh next question
+        await nextQuestion();
+      }
+    } catch (e) {
+      setMessages((m) => [...m, { sender: "ceraai", text: `Error: ${String(e.message || e)}` }]);
+    }
+  };
 
-  const res = await api("/interview/answer", { method: "POST", body: { text } });
-  setText("");
-  setReady(Boolean(res.complete));
-  await refreshState();
-
-  if (res.complete) {
-    setMessages(m => [...m, { sender: "ceraai", text: "I have enough to generate your Legal Entity template." }]);
-    return;
-  }
-
-  // Auto-ask next question (server returns `next` with `question`)
-  if (res.next && res.next.question) {
-    setMessages(m => [...m, { sender: "ceraai", text: res.next.question }]);
-  } else {
-    // fallback: fetch a fresh next question
-    await nextQuestion();
-  }
-};
 
 
   const refreshState = async () => {
