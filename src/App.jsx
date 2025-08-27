@@ -7,6 +7,12 @@ const BASE_URL = "https://ceraai-erp-setup-copilot.onrender.com";
 const USER = "demo";
 const PASS = "demo";
 
+/** ===== WELCOME ===== */
+const WELCOME =
+  "Hi, I am CERA, your ERP setup copilot. I will help you set up the Legal Entity in ERP. " +
+  "I will ask a few simple questions to determine which template you’ll use to upload information " +
+  "so I can create the Legal Entity objects for you. Don’t hesitate to ask questions or clarifications.";
+
 /** ===== HELPERS ===== */
 function useRunId() {
   const [runId, setRunId] = useState(() => {
@@ -46,22 +52,18 @@ export default function App() {
     const blob = await res.blob();
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    a.href = url; a.download = filename; document.body.appendChild(a); a.click();
+    a.remove(); URL.revokeObjectURL(url);
   };
 
   /** ===== UI STATE ===== */
   const [messages, setMessages] = useState([]);
   const [text, setText] = useState("");
+  const [file, setFile] = useState(null);
+  const [issues, setIssues] = useState([]);
   const [state, setState] = useState(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
-  const [file, setFile] = useState(null);
-  const [issues, setIssues] = useState([]);
 
   /** ===== ACTIONS ===== */
   const nextQuestion = async () => {
@@ -75,9 +77,7 @@ export default function App() {
           sender: "ceraai",
           text:
             data.question ||
-            (data.complete
-              ? "I can generate your template now."
-              : "Provide more details."),
+            (data.complete ? "I can generate your template now." : "Provide more details."),
         },
       ]);
       await refreshState();
@@ -90,10 +90,7 @@ export default function App() {
     if (!text.trim()) return;
     setMessages((m) => [...m, { sender: "user", text }]);
 
-    const res = await api("/interview/answer", {
-      method: "POST",
-      body: { text },
-    });
+    const res = await api("/interview/answer", { method: "POST", body: { text } });
     setText("");
     setReady(Boolean(res.complete));
     await refreshState();
@@ -105,10 +102,7 @@ export default function App() {
     if (res.complete) {
       setMessages((m) => [
         ...m,
-        {
-          sender: "ceraai",
-          text: "I have enough to generate your Legal Entity template.",
-        },
+        { sender: "ceraai", text: "I have enough to generate your Legal Entity template." },
       ]);
       return;
     }
@@ -130,6 +124,15 @@ export default function App() {
     }
   };
 
+  const downloadTemplate = async () => {
+    setError("");
+    try {
+      await downloadWithAuth("/template/draft", "legal_entity_template.xlsx");
+    } catch (e) {
+      setError(String(e.message || e));
+    }
+  };
+
   const uploadAndValidate = async () => {
     if (!file) return;
     setError("");
@@ -146,12 +149,7 @@ export default function App() {
       setIssues(res.issues || []);
       setMessages((m) => [
         ...m,
-        {
-          sender: "ceraai",
-          text: res.issues?.length
-            ? `Found ${res.issues.length} issue(s). Download review for details.`
-            : "Template is error-free.",
-        },
+        { sender: "ceraai", text: res.issues?.length ? `Found ${res.issues.length} issue(s). Download review for details.` : "Template is error-free." },
       ]);
     } catch (e) {
       setError(String(e.message || e));
@@ -167,31 +165,33 @@ export default function App() {
     }
   };
 
-  /** NEW: start a clean session */
+  /** NEW: start a clean session (show welcome immediately) */
   const newSession = () => {
     const fresh = `ui-${Date.now()}`;
     setRunId(fresh);
-    setMessages([]);
+    setMessages([{ sender: "ceraai", text: WELCOME }]);
     setText("");
+    setFile(null);
+    setIssues([]);
     setState(null);
     setReady(false);
     setError("");
-    setFile(null);
-    setIssues([]);
   };
 
+  /** On first load & whenever runId changes: ensure welcome appears once, then ask first question */
   useEffect(() => {
+    // If there are no messages yet in this session, seed the welcome
+    setMessages((m) => (m.length === 0 ? [{ sender: "ceraai", text: WELCOME }] : m));
     nextQuestion().catch(() => {});
     // eslint-disable-next-line
   }, [runId]);
 
   return (
     <div className="app">
+      {/* Header */}
       <nav className="header">
         <div className="brand">CERAai – ERP-SETUP-COPILOT</div>
-        <div className="runid">
-          Run ID: <code>{runId}</code>
-        </div>
+        <div className="runid">Run ID: <code>{runId}</code></div>
       </nav>
 
       <div className="body">
@@ -200,6 +200,8 @@ export default function App() {
           <button className="new-session-btn" onClick={newSession}>
             New session
           </button>
+          <div className="step">📄 Template</div>
+          <div className="step">⬆️ Upload & Validate</div>
         </aside>
 
         {/* Main */}
@@ -216,27 +218,20 @@ export default function App() {
 
             <div className="chat-body">
               {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={`bubble ${m.sender === "user" ? "user" : "bot"}`}
-                >
+                <div key={i} className={`bubble ${m.sender === "user" ? "user" : "bot"}`}>
                   {m.text}
                 </div>
               ))}
             </div>
-            <div
-              className="chat-input"
-              style={{ gridTemplateColumns: "1fr auto" }}
-            >
+
+            <div className="chat-input" style={{ gridTemplateColumns: "1fr auto" }}>
               <textarea
                 placeholder="Type your answer in natural language…"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 style={{ resize: "vertical", minHeight: 60 }}
               />
-              <button className="btn primary" onClick={submitFreeText}>
-                Send
-              </button>
+              <button className="btn primary" onClick={submitFreeText}>Send</button>
             </div>
             <div className="powered-by">Powered by CERA AI</div>
           </section>
@@ -245,6 +240,9 @@ export default function App() {
           <section className="card">
             <div className="card-head">
               <h2>State</h2>
+              <div className="actions">
+                <button className="btn" onClick={refreshState}>Refresh</button>
+              </div>
             </div>
             <pre className="code">{JSON.stringify(state || {}, null, 2)}</pre>
           </section>
@@ -254,14 +252,10 @@ export default function App() {
             <div className="card-head">
               <h2>Template & Validation</h2>
               <div className="actions" style={{ display: "flex", gap: 8 }}>
-                <button className="btn" onClick={downloadWithAuth.bind(null, "/template/draft", "legal_entity_template.xlsx")} disabled={!ready}>
+                <button className="btn" onClick={downloadTemplate} disabled={!ready}>
                   Download Template (XLSX)
                 </button>
-                <input
-                  type="file"
-                  accept=".xlsx"
-                  onChange={(e) => setFile(e.target.files?.[0] || null)}
-                />
+                <input type="file" accept=".xlsx" onChange={(e) => setFile(e.target.files?.[0] || null)} />
                 <button className="btn" onClick={uploadAndValidate}>
                   Upload & Validate
                 </button>
@@ -274,17 +268,12 @@ export default function App() {
               <div className="error" style={{ margin: 12 }}>
                 Found {issues.length} issue(s):{" "}
                 {issues.map((i, idx) => (
-                  <span key={idx}>
-                    {i.field}@row{i.row}
-                    {idx < issues.length - 1 ? ", " : ""}
-                  </span>
+                  <span key={idx}>{i.field}@row{i.row}{idx < issues.length - 1 ? ", " : ""}</span>
                 ))}
               </div>
             ) : (
               <div style={{ padding: 12, color: "#6b7280" }}>
-                {ready
-                  ? "Ready: You can download the template now."
-                  : "Waiting for enough info to generate the template."}
+                {ready ? "Ready: You can download the template now." : "Waiting for enough info to generate the template."}
               </div>
             )}
           </section>
