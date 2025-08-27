@@ -87,6 +87,25 @@ body{
   gap:16px;
 }
 
+/* Sidebar clickable item */
+.step-btn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 8px;
+  font: inherit;
+  color: var(--fg-muted, #9ca3af);
+  cursor: pointer;
+}
+.step-btn:hover {
+  background: var(--surface-2, #1f2937);
+  color: var(--fg, #e5e7eb);
+}
+
+
 /* Cards */
 .card{
   background:var(--panel);
