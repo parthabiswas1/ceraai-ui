@@ -264,6 +264,20 @@ body{
   border-color: #80848d;
 }
 
+.powered-by{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:6px 12px 12px;
+  font-size:12px;
+  color:var(--subtext);
+}
+
+.powered-logo{
+  width:16px;
+  height:16px;
+  object-fit:contain;
+}
 
 /* Responsive */
 @media (max-width: 960px){
