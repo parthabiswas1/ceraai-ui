@@ -51,7 +51,14 @@ export default function App() {
   };
 
   /** ===== UI STATE ===== */
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState([
+  {
+    sender: "ceraai",
+    text:
+      "Hi, I am  CERA your ERP Setup Copilot. I will ask you a few simple questions and then create a legal-entity template tailored to your context. When you fill it up and upload it, I will validate it. If everything looks fine, I will create the Legal Entity objects in the ERP system. Feel free to ask any questions or clarifications at any time."
+  }
+]);
+
   const [text, setText] = useState("");        // free-text answer
   const [file, setFile] = useState(null);      // uploaded xlsx
   const [issues, setIssues] = useState([]);    // validation issues
