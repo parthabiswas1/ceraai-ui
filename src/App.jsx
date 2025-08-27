@@ -2,7 +2,6 @@
 import { useEffect, useState } from "react";
 import "./styles.css";
 
-
 /** ===== CONFIG ===== */
 const BASE_URL = "https://ceraai-erp-setup-copilot.onrender.com";
 const USER = "demo";
@@ -18,7 +17,8 @@ function useRunId() {
 }
 
 export default function App() {
-  const [runId] = useRunId();
+  // NOTE: now we also grab the setter
+  const [runId, setRunId] = useRunId();
   const AUTH = "Basic " + btoa(`${USER}:${PASS}`);
 
   const api = async (path, { method = "GET", body, headers = {} } = {}) => {
@@ -52,19 +52,12 @@ export default function App() {
   };
 
   /** ===== UI STATE ===== */
-  const [messages, setMessages] = useState([
-  {
-    sender: "ceraai",
-    text:
-      "Hi, I am  CERA your ERP Setup Copilot. I will ask you a few simple questions and then create a legal-entity template tailored to your context. When you fill it up and upload it, I will validate it. If everything looks fine, I will create the Legal Entity objects in the ERP system. Feel free to ask any questions or clarifications at any time."
-  }
-]);
-
-  const [text, setText] = useState("");        // free-text answer
-  const [file, setFile] = useState(null);      // uploaded xlsx
-  const [issues, setIssues] = useState([]);    // validation issues
-  const [state, setState] = useState(null);    // backend state (/state)
-  const [ready, setReady] = useState(false);   // interview satisfied
+  const [messages, setMessages] = useState([]);
+  const [text, setText] = useState("");
+  const [file, setFile] = useState(null);
+  const [issues, setIssues] = useState([]);
+  const [state, setState] = useState(null);
+  const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
 
   /** ===== ACTIONS ===== */
@@ -85,41 +78,28 @@ export default function App() {
 
   const submitFreeText = async () => {
     if (!text.trim()) return;
-    setMessages((m) => [...m, { sender: "user", text }]);
-  
-    try {
-      const res = await api("/interview/answer", { method: "POST", body: { text } });
-      setText("");
-      setReady(Boolean(res.complete));
-      await refreshState();
-  
-      // If the backend answered a side question via RAG/LLM
-      if (res.assist) {
-        setMessages((m) => [...m, { sender: "ceraai", text: res.assist }]);
-      }
-  
-      // If gating is complete
-      if (res.complete) {
-        setMessages((m) => [
-          ...m,
-          { sender: "ceraai", text: "I have enough to generate your Legal Entity template." },
-        ]);
-        return;
-      }
-  
-      // Otherwise, show the next gating question
-      if (res.next && res.next.question) {
-        setMessages((m) => [...m, { sender: "ceraai", text: res.next.question }]);
-      } else {
-        // fallback to fetching a fresh next question
-        await nextQuestion();
-      }
-    } catch (e) {
-      setMessages((m) => [...m, { sender: "ceraai", text: `Error: ${String(e.message || e)}` }]);
+    setMessages(m => [...m, { sender: "user", text }]);
+
+    const res = await api("/interview/answer", { method: "POST", body: { text } });
+    setText("");
+    setReady(Boolean(res.complete));
+    await refreshState();
+
+    if (res.assist) {
+      setMessages(m => [...m, { sender: "ceraai", text: res.assist }]);
+    }
+
+    if (res.complete) {
+      setMessages(m => [...m, { sender: "ceraai", text: "I have enough to generate your Legal Entity template." }]);
+      return;
+    }
+
+    if (res.next && res.next.question) {
+      setMessages(m => [...m, { sender: "ceraai", text: res.next.question }]);
+    } else {
+      await nextQuestion();
     }
   };
-
-
 
   const refreshState = async () => {
     setError("");
@@ -172,8 +152,23 @@ export default function App() {
     }
   };
 
-  /** Auto-load first question */
-  useEffect(() => { nextQuestion().catch(() => {}); /* eslint-disable-next-line */ }, []);
+  /** NEW: start a clean session */
+  const newSession = () => {
+    const fresh = `ui-${Date.now()}`;
+    setRunId(fresh);
+    setMessages([]);
+    setText("");
+    setFile(null);
+    setIssues([]);
+    setState(null);
+    setReady(false);
+    setError("");
+    // We don't call nextQuestion() here because `runId` hasn't re-rendered yet.
+    // The useEffect below will trigger `nextQuestion()` after runId updates.
+  };
+
+  /** Auto-load first question on mount AND whenever runId changes */
+  useEffect(() => { nextQuestion().catch(() => {}); /* eslint-disable-line */ }, [runId]);
 
   return (
     <div className="app">
@@ -186,7 +181,7 @@ export default function App() {
       <div className="body">
         {/* Sidebar */}
         <aside className="sidebar">
-          <div className="step">🗨️ Interview</div>
+          <button className="step-btn" onClick={newSession}>🧪 New session</button>
           <div className="step">📄 Template</div>
           <div className="step">⬆️ Upload & Validate</div>
         </aside>
@@ -200,7 +195,7 @@ export default function App() {
           <section className="card chat">
             <div className="card-head">
               <h2>Interview</h2>
-              <div /> {/* no actions */}
+              <div />
             </div>
 
             <div className="chat-body">
@@ -219,10 +214,10 @@ export default function App() {
               />
               <button className="btn primary" onClick={submitFreeText}>Send</button>
             </div>
-            <div className="powered">Powered by CERA AI</div>
+            <div className="powered-by">Powered by CERA AI</div>
           </section>
 
-          {/* Validator / State */}
+          {/* State */}
           <section className="card">
             <div className="card-head">
               <h2>State</h2>
