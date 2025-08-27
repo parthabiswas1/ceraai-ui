@@ -2,6 +2,7 @@
 import { useEffect, useState } from "react";
 import "./styles.css";
 
+
 /** ===== CONFIG ===== */
 const BASE_URL = "https://ceraai-erp-setup-copilot.onrender.com";
 const USER = "demo";
