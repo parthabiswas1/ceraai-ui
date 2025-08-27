@@ -156,55 +156,86 @@ export default function App() {
       <div className="body">
         {/* Sidebar */}
         <aside className="sidebar">
-          <button className="step-card" onClick={newSession}>
-            🧪 New session
+          <button 
+            className="new-session-btn" 
+            onClick={newSession}
+          >
+           New session
           </button>
         </aside>
-
+        
         {/* Main */}
         <main className="main">
+          {/* Errors */}
           {error ? <div className="error">{error}</div> : null}
-
+        
           {/* Chat */}
           <section className="card chat">
             <div className="card-head">
               <h2>Interview</h2>
               <div />
             </div>
-
+        
             <div className="chat-body">
               {messages.map((m, i) => (
-                <div
-                  key={i}
-                  className={`bubble ${m.sender === "user" ? "user" : "bot"}`}
-                >
+                <div key={i} className={`bubble ${m.sender === "user" ? "user" : "bot"}`}>
                   {m.text}
                 </div>
               ))}
             </div>
-            <div
-              className="chat-input"
-              style={{ gridTemplateColumns: "1fr auto" }}
-            >
+            <div className="chat-input" style={{ gridTemplateColumns: "1fr auto" }}>
               <textarea
                 placeholder="Type your answer in natural language…"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 style={{ resize: "vertical", minHeight: 60 }}
               />
-              <button className="btn primary" onClick={submitFreeText}>
-                Send
-              </button>
+              <button className="btn primary" onClick={submitFreeText}>Send</button>
             </div>
             <div className="powered-by">Powered by CERA AI</div>
           </section>
-
+        
           {/* State */}
           <section className="card">
             <div className="card-head">
               <h2>State</h2>
             </div>
             <pre className="code">{JSON.stringify(state || {}, null, 2)}</pre>
+          </section>
+        
+          {/* Template + Upload/Validate */}
+          <section className="card">
+            <div className="card-head">
+              <h2>Template & Validation</h2>
+              <div className="actions" style={{ display: "flex", gap: 8 }}>
+                <button className="btn" onClick={downloadTemplate} disabled={!ready}>
+                  Download Template (XLSX)
+                </button>
+                <input 
+                  type="file" 
+                  accept=".xlsx" 
+                  onChange={(e) => setFile(e.target.files?.[0] || null)} 
+                />
+                <button className="btn" onClick={uploadAndValidate}>
+                  Upload & Validate
+                </button>
+                <button className="btn" onClick={downloadReview}>
+                  Download Review
+                </button>
+              </div>
+            </div>
+            {issues.length > 0 ? (
+              <div className="error" style={{ margin: 12 }}>
+                Found {issues.length} issue(s):{" "}
+                {issues.map((i, idx) => (
+                  <span key={idx}>{i.field}@row{i.row}{idx < issues.length - 1 ? ", " : ""}</span>
+                ))}
+              </div>
+            ) : (
+              <div style={{ padding: 12, color: "#6b7280" }}>
+                {ready ? "Ready: You can download the template now." : "Waiting for enough info to generate the template."}
+              </div>
+            )}
           </section>
         </main>
       </div>
