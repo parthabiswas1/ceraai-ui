@@ -20,6 +20,10 @@ export default function App() {
   // NOTE: now we also grab the setter
   const [runId, setRunId] = useRunId();
   const AUTH = "Basic " + btoa(`${USER}:${PASS}`);
+  const WELCOME = `Hi, I am CERA, your ERP setup copilot. I will help you set up the Legal Entity in ERP.
+  I will ask a few simple questions to determine which template you’ll use to upload information
+  so I can create the Legal Entity objects for you. Don’t hesitate to ask questions or clarifications.`;
+
 
   const api = async (path, { method = "GET", body, headers = {} } = {}) => {
     const res = await fetch(`${BASE_URL}${path}`, {
@@ -156,7 +160,7 @@ export default function App() {
   const newSession = () => {
     const fresh = `ui-${Date.now()}`;
     setRunId(fresh);
-    setMessages([]);
+    setMessages([{ sender: "ceraai", text: WELCOME }]);
     setText("");
     setFile(null);
     setIssues([]);
@@ -168,7 +172,8 @@ export default function App() {
   };
 
   /** Auto-load first question on mount AND whenever runId changes */
-  useEffect(() => { nextQuestion().catch(() => {}); /* eslint-disable-line */ }, [runId]);
+  /* useEffect(() => { nextQuestion().catch(() => {});}, [runId]); */
+  useEffect(() => {setMessages(m => (m.length ? m : [{ sender: "ceraai", text: WELCOME }]));nextQuestion().catch(() => {});}, [runId]);
 
   return (
     <div className="app">
