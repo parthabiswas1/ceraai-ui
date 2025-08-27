@@ -130,15 +130,19 @@ body{
 }
 
 /* Chat area */
-.chat{
-  display:flex; flex-direction:column;
+.chat {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
 }
-.chat-body{
-  padding:14px;
-  display:flex; flex-direction:column; gap:10px;
-  max-height:48vh; overflow:auto;
-  background:linear-gradient(180deg, rgba(21,24,29,.6), rgba(21,24,29,.2));
+
+.chat-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  margin-bottom: 8px; /* ensures space above input */
 }
+
 .bubble{
   width:fit-content; max-width: 92%;
   padding:10px 12px; border-radius:12px;
@@ -157,14 +161,15 @@ body{
 }
 
 /* Chat input */
-.chat-input{
-  display:grid;
+.chat-input {
+  display: grid;
   grid-template-columns: 1fr auto;
-  gap:8px;
-  padding:12px;
-  border-top:1px solid var(--border);
-  background:var(--panel-2);
+  gap: 8px;
+  padding: 8px;
+  border-top: 1px solid #e5e7eb; /* subtle divider */
+  background: #1e1e1e; /* match ChatGPT style */
 }
+
 .chat-input textarea{
   width:100%;
   background:#0f1318;
