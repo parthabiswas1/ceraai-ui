@@ -218,6 +218,7 @@ export default function App() {
               />
               <button className="btn primary" onClick={submitFreeText}>Send</button>
             </div>
+            <div className="powered">Powered by CERA AI</div>
           </section>
 
           {/* Validator / State */}
