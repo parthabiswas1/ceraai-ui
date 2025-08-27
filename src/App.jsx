@@ -60,6 +60,8 @@ export default function App() {
   const [state, setState] = useState(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
+  const [file, setFile] = useState(null);
+  const [issues, setIssues] = useState([]);
 
   /** ===== ACTIONS ===== */
   const nextQuestion = async () => {
@@ -128,6 +130,43 @@ export default function App() {
     }
   };
 
+  const uploadAndValidate = async () => {
+    if (!file) return;
+    setError("");
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const up = await fetch(`${BASE_URL}/files/upload`, {
+        method: "POST",
+        headers: { Authorization: AUTH, "X-Run-ID": runId },
+        body: fd,
+      });
+      if (!up.ok) throw new Error(`${up.status} ${up.statusText}`);
+      const res = await api("/files/validate", { method: "POST" });
+      setIssues(res.issues || []);
+      setMessages((m) => [
+        ...m,
+        {
+          sender: "ceraai",
+          text: res.issues?.length
+            ? `Found ${res.issues.length} issue(s). Download review for details.`
+            : "Template is error-free.",
+        },
+      ]);
+    } catch (e) {
+      setError(String(e.message || e));
+    }
+  };
+
+  const downloadReview = async () => {
+    setError("");
+    try {
+      await downloadWithAuth("/files/review", "review.xlsx");
+    } catch (e) {
+      setError(String(e.message || e));
+    }
+  };
+
   /** NEW: start a clean session */
   const newSession = () => {
     const fresh = `ui-${Date.now()}`;
@@ -137,6 +176,8 @@ export default function App() {
     setState(null);
     setReady(false);
     setError("");
+    setFile(null);
+    setIssues([]);
   };
 
   useEffect(() => {
@@ -156,45 +197,50 @@ export default function App() {
       <div className="body">
         {/* Sidebar */}
         <aside className="sidebar">
-          <button 
-            className="new-session-btn" 
-            onClick={newSession}
-          >
-           New session
+          <button className="new-session-btn" onClick={newSession}>
+            New session
           </button>
         </aside>
-        
+
         {/* Main */}
         <main className="main">
           {/* Errors */}
           {error ? <div className="error">{error}</div> : null}
-        
+
           {/* Chat */}
           <section className="card chat">
             <div className="card-head">
               <h2>Interview</h2>
               <div />
             </div>
-        
+
             <div className="chat-body">
               {messages.map((m, i) => (
-                <div key={i} className={`bubble ${m.sender === "user" ? "user" : "bot"}`}>
+                <div
+                  key={i}
+                  className={`bubble ${m.sender === "user" ? "user" : "bot"}`}
+                >
                   {m.text}
                 </div>
               ))}
             </div>
-            <div className="chat-input" style={{ gridTemplateColumns: "1fr auto" }}>
+            <div
+              className="chat-input"
+              style={{ gridTemplateColumns: "1fr auto" }}
+            >
               <textarea
                 placeholder="Type your answer in natural language…"
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 style={{ resize: "vertical", minHeight: 60 }}
               />
-              <button className="btn primary" onClick={submitFreeText}>Send</button>
+              <button className="btn primary" onClick={submitFreeText}>
+                Send
+              </button>
             </div>
             <div className="powered-by">Powered by CERA AI</div>
           </section>
-        
+
           {/* State */}
           <section className="card">
             <div className="card-head">
@@ -202,19 +248,19 @@ export default function App() {
             </div>
             <pre className="code">{JSON.stringify(state || {}, null, 2)}</pre>
           </section>
-        
+
           {/* Template + Upload/Validate */}
           <section className="card">
             <div className="card-head">
               <h2>Template & Validation</h2>
               <div className="actions" style={{ display: "flex", gap: 8 }}>
-                <button className="btn" onClick={downloadTemplate} disabled={!ready}>
+                <button className="btn" onClick={downloadWithAuth.bind(null, "/template/draft", "legal_entity_template.xlsx")} disabled={!ready}>
                   Download Template (XLSX)
                 </button>
-                <input 
-                  type="file" 
-                  accept=".xlsx" 
-                  onChange={(e) => setFile(e.target.files?.[0] || null)} 
+                <input
+                  type="file"
+                  accept=".xlsx"
+                  onChange={(e) => setFile(e.target.files?.[0] || null)}
                 />
                 <button className="btn" onClick={uploadAndValidate}>
                   Upload & Validate
@@ -228,12 +274,17 @@ export default function App() {
               <div className="error" style={{ margin: 12 }}>
                 Found {issues.length} issue(s):{" "}
                 {issues.map((i, idx) => (
-                  <span key={idx}>{i.field}@row{i.row}{idx < issues.length - 1 ? ", " : ""}</span>
+                  <span key={idx}>
+                    {i.field}@row{i.row}
+                    {idx < issues.length - 1 ? ", " : ""}
+                  </span>
                 ))}
               </div>
             ) : (
               <div style={{ padding: 12, color: "#6b7280" }}>
-                {ready ? "Ready: You can download the template now." : "Waiting for enough info to generate the template."}
+                {ready
+                  ? "Ready: You can download the template now."
+                  : "Waiting for enough info to generate the template."}
               </div>
             )}
           </section>
