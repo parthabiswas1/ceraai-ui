@@ -20,9 +20,7 @@ export default function App() {
   // NOTE: now we also grab the setter
   const [runId, setRunId] = useRunId();
   const AUTH = "Basic " + btoa(`${USER}:${PASS}`);
-  const WELCOME = `Hi, I am CERA, your ERP setup copilot. I will help you set up the Legal Entity in ERP.
-  I will ask a few simple questions to determine which template you’ll use to upload information
-  so I can create the Legal Entity objects for you. Don’t hesitate to ask questions or clarifications.`;
+  const WELCOME = `Hi, I am CERA, your ERP setup copilot. I will help you set up the Legal Entity in ERP. I will ask a few simple questions to determine which template you’ll use to upload information so I can create the Legal Entity objects for you. Don’t hesitate to ask questions or clarifications.`;
 
 
   const api = async (path, { method = "GET", body, headers = {} } = {}) => {
