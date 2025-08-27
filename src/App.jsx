@@ -240,9 +240,6 @@ export default function App() {
           <section className="card">
             <div className="card-head">
               <h2>State</h2>
-              <div className="actions">
-                <button className="btn" onClick={refreshState}>Refresh</button>
-              </div>
             </div>
             <pre className="code">{JSON.stringify(state || {}, null, 2)}</pre>
           </section>
