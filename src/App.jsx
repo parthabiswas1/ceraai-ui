@@ -233,7 +233,11 @@ export default function App() {
               />
               <button className="btn primary" onClick={submitFreeText}>Send</button>
             </div>
-            <div className="powered-by">Powered by CERA AI</div>
+            <div className="powered-by">
+              <img src="/cera-logo.png" alt="CERA logo" className="powered-logo" />
+              <span>Powered by CERA AI</span>
+            </div>
+
           </section>
 
           {/* State */}
