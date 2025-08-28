@@ -102,7 +102,7 @@ export default function App() {
     if (res.complete) {
       setMessages((m) => [
         ...m,
-        { sender: "ceraai", text: "I have enough to generate your Legal Entity template." },
+        { sender: "ceraai", text: "This concludes our initial interview. I have generated a tailored template for you to capture more Legal Entity details that I need specifc to your situation. Please fill it up and upload the template. One of my Agents will validate it and the Executor Agent will create the Legal Entity in the ERP system." },
       ]);
       return;
     }
