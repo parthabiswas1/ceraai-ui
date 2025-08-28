@@ -9,7 +9,7 @@ const PASS = "demo";
 
 /** ===== WELCOME ===== */
 const WELCOME =
-  "Hi, I am CERA, your ERP setup copilot. I will help you set up the Legal Entity in ERP. " +
+  "Hi, I am CERA, your ERP setup copilot. I and my other AI Agents will help you set up the Legal Entity in ERP. " +
   "I will ask a few simple questions to determine which template you’ll use to upload information " +
   "so I can create the Legal Entity objects for you. Don’t hesitate to ask questions or clarifications.";
 
